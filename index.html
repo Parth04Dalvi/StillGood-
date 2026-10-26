@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StillGood? - Food Freshness & Safety Companion</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Canvas Confetti for Micro-celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            fresh: '#10b981',
+            caution: '#f59e0b',
+            danger: '#ef4444',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom scrollbars and sticker print styles */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+
+    /* Print styling strictly for printable label sheet */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-sticker-sheet, #printable-sticker-sheet * {
+        visibility: visible;
+      }
+      #printable-sticker-sheet {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+        padding: 20px;
+        display: block !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.92; transform: scale(0.99); }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
+
+  <!-- TOP ANNOUNCEMENT BAR -->
+  <div class="bg-emerald-900 text-emerald-100 text-xs py-1.5 px-4 text-center font-medium flex items-center justify-center gap-2 border-b border-emerald-800">
+    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 uppercase tracking-wider">Verified</span>
+    <span>Aligned with USDA FSIS & FDA FoodSafety.gov Guidelines • Never eat questionable meat or rice</span>
+  </div>
+
+  <!-- NAVIGATION HEADER -->
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('diagnostic')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-600 to-teal-500 dark:from-emerald-400 dark:to-teal-300 bg-clip-text text-transparent">StillGood?</span>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 rounded-full border border-emerald-300 dark:border-emerald-700">v2.4</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium">Food freshness & shelf-life sentinel</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-sm font-medium">
+        <button onclick="switchTab('diagnostic')" id="tab-btn-diagnostic" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-emerald-700 dark:text-emerald-300 bg-white dark:bg-slate-700 shadow-sm">
+          <i data-lucide="scan-search" class="w-4 h-4"></i>
+          <span>Check Food</span>
+        </button>
+        <button onclick="switchTab('tracker')" id="tab-btn-tracker" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+          <i data-lucide="refrigerator" class="w-4 h-4"></i>
+          <span>My Fridge</span>
+          <span id="nav-tracker-count" class="bg-emerald-500 text-white text-[11px] font-bold px-1.5 py-0.2 rounded-full">3</span>
+        </button>
+        <button onclick="switchTab('stickers')" id="tab-btn-stickers" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+          <i data-lucide="printer" class="w-4 h-4"></i>
+          <span>Smart Stickers</span>
+        </button>
+        <button onclick="switchTab('database')" id="tab-btn-database" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+          <i data-lucide="book-open" class="w-4 h-4"></i>
+          <span>Food Codex</span>
+        </button>
+        <button onclick="switchTab('decoder')" id="tab-btn-decoder" class="tab-btn px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+          <i data-lucide="tag" class="w-4 h-4"></i>
+          <span>Label Decoder</span>
+        </button>
+      </nav>
+
+      <!-- Right Action Tools -->
+      <div class="flex items-center gap-2">
+        <button onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Toggle theme">
+          <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+          <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+        </button>
+        <button onclick="openQuickTrackModal()" class="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md shadow-emerald-600/20 transition-all">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Quick Log</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Bar -->
+    <div class="md:hidden flex overflow-x-auto border-t border-slate-200 dark:border-slate-800 px-3 py-2 gap-1 bg-white dark:bg-slate-900">
+      <button onclick="switchTab('diagnostic')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50">Check Food</button>
+      <button onclick="switchTab('tracker')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">My Fridge (<span id="mobile-tracker-count">3</span>)</button>
+      <button onclick="switchTab('stickers')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">Stickers</button>
+      <button onclick="switchTab('database')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">Food Codex</button>
+      <button onclick="switchTab('decoder')" class="tab-btn-mobile px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap text-slate-600 dark:text-slate-300">Labels</button>
+    </div>
+  </header>
+  <button onclick="openQuickTrackModal()" class="sm:hidden fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-xl shadow-emerald-900/30">
+    <i data-lucide="plus" class="w-4 h-4"></i> Quick Log
+  </button>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ============================================================== -->
+    <!-- VIEW 1: DIAGNOSTIC / "IS IT STILL GOOD RIGHT NOW?" (DEFAULT)   -->
+    <!-- ============================================================== -->
+    <section id="view-diagnostic" class="space-y-8 block">
+      <!-- Hero Banner -->
+      <div class="text-center max-w-3xl mx-auto space-y-3">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 text-xs font-semibold">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-600"></i>
+          USDA & FDA Scientific Shelf-Life Matrix
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          Is it still good, or will you regret it?
+        </h1>
+        <p class="text-slate-600 dark:text-slate-300 text-base sm:text-lg">
+          Expiration dates apply only to <em>sealed, unopened</em> factory packaging. Once you open, cook, or freeze it, the clock resets. Run our instant freshness diagnostic below.
+        </p>
+      </div>
+
+      <div class="max-w-4xl mx-auto rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm dark:border-amber-900 dark:bg-amber-950/30 sm:p-8">
+        <div class="flex items-start gap-3">
+          <div class="rounded-xl bg-amber-100 p-2 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300"><i data-lucide="sandwich" class="h-5 w-5"></i></div>
+          <div>
+            <h2 class="text-lg font-extrabold text-slate-900 dark:text-white">Cooked food & takeout check</h2>
+            <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Pizza, takeout, cooked meals, and leftovers. Enter when you got the food, its storage, and total time left out. This is general guidance—not a guarantee that food is safe.</p>
+          </div>
+        </div>
+        <form class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2" onsubmit="checkCookedFood(event)">
+          <div>
+            <label for="cooked-food-name" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">What food is it?</label>
+            <input id="cooked-food-name" type="text" maxlength="100" required placeholder="e.g. pizza, takeout noodles, cooked chicken" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+            <p class="mt-1 text-[10px] text-slate-400">Name helps identify the item; the timing answers drive this estimate.</p>
+          </div>
+          <div>
+            <label for="cooked-food-date" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">When was it bought or cooked?</label>
+            <input id="cooked-food-date" type="datetime-local" required class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+          </div>
+          <div>
+            <label for="cooked-food-storage" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">How has it been stored since?</label>
+            <select id="cooked-food-storage" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+              <option value="fridge">Refrigerated (40°F / 4°C or below)</option>
+              <option value="freezer">Frozen continuously (0°F / -18°C)</option>
+              <option value="room">Left at room temperature</option>
+            </select>
+          </div>
+          <div>
+            <label for="cooked-food-out-hours" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total time unrefrigerated before chilling/freezing</label>
+            <div class="mt-1 flex items-center gap-2">
+              <input id="cooked-food-out-hours" type="number" min="0" max="999" step="0.25" value="1" required class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900">
+              <span class="text-xs text-slate-500">hours</span>
+            </div>
+            <label class="mt-2 flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+              <input id="cooked-food-hot" type="checkbox" class="mt-0.5">
+              It was in hot conditions above 90°F / 32°C
+            </label>
+          </div>
+          <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+            <button type="submit" class="rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-amber-700">Check this food</button>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Hot food can go directly into the refrigerator; prompt chilling is safer than leaving it out to cool.</p>
+          </div>
+        </form>
+        <div id="cooked-food-result" role="status" aria-live="polite" class="mt-4 hidden rounded-2xl border p-4 text-sm"></div>
+      </div>
+
+      <!-- Quick Interactive Diagnostic Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden p-6 sm:p-8 max-w-4xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+          
+          <!-- Input Controls (Left Column) -->
+          <div class="md:col-span-7 space-y-6">
+            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-emerald-600 text-white inline-flex items-center justify-center text-xs font-bold">1</span>
+              Configure Item & Storage
+            </h2>
+
+            <!-- Food Search / Selection -->
+            <div class="space-y-2 relative">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Select or Search Food</label>
+              <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400"></i>
+                <input 
+                  type="text" 
+                  id="diag-food-search" 
+                  placeholder="e.g. Cooked Chicken, Milk, Rice..." 
+                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-900 dark:text-white text-sm"
+                  oninput="handleDiagnosticSearch(this.value)"
+                  onfocus="showDropdown()"
+                  autocomplete="off"
+                >
+                <div id="search-autocomplete-dropdown" class="absolute z-20 top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl max-h-60 overflow-y-auto hidden">
+                  <!-- Dynamic Search Options -->
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1.5 pt-1">
+                <span class="text-xs text-slate-400 font-medium">Popular:</span>
+                <button onclick="selectQuickFood('Cooked Chicken Breast')" class="text-xs px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">Cooked Chicken</button>
+                <button onclick="selectQuickFood('Leftover White/Brown Rice')" class="text-xs px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">Leftover Rice</button>
+                <button onclick="selectQuickFood('Opened Milk (Dairy)')" class="text-xs px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">Opened Milk</button>
+                <button onclick="selectQuickFood('Raw Ground Beef')" class="text-xs px-2 py-0.5 rounded-md bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300">Ground Beef</button>
+              </div>
+            </div>
+
+            <!-- State of Food -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Current Item Condition</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setFoodState('opened')" id="btn-state-opened" class="state-btn p-3 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex flex-col items-center gap-1.5 transition-all">
+                  <i data-lucide="package-open" class="w-4 h-4"></i>
+                  <span>Once Opened</span>
+                </button>
+                <button onclick="setFoodState('cooked')" id="btn-state-cooked" class="state-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex flex-col items-center gap-1.5 transition-all">
+                  <i data-lucide="flame" class="w-4 h-4"></i>
+                  <span>Cooked Leftover</span>
+                </button>
+                <button onclick="setFoodState('raw')" id="btn-state-raw" class="state-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex flex-col items-center gap-1.5 transition-all">
+                  <i data-lucide="drumstick" class="w-4 h-4"></i>
+                  <span>Raw / Uncooked</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Storage Method -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Storage Environment</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setStorageMethod('fridge')" id="btn-store-fridge" class="store-btn p-2.5 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2">
+                  <i data-lucide="thermometer-snowflake" class="w-4 h-4"></i>
+                  <span>Fridge (&le;40°F)</span>
+                </button>
+                <button onclick="setStorageMethod('freezer')" id="btn-store-freezer" class="store-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-2">
+                  <i data-lucide="snowflake" class="w-4 h-4"></i>
+                  <span>Freezer (0°F)</span>
+                </button>
+                <button onclick="setStorageMethod('pantry')" id="btn-store-pantry" class="store-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-2">
+                  <i data-lucide="sun" class="w-4 h-4"></i>
+                  <span>Room Temp</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- When was it prepared/opened -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">When did you open or cook it?</label>
+              <div class="flex flex-wrap gap-2">
+                <button onclick="setRelativeDate(0)" class="date-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">Today</button>
+                <button onclick="setRelativeDate(1)" class="date-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">Yesterday</button>
+                <button onclick="setRelativeDate(3)" class="date-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">3 Days Ago</button>
+                <button onclick="setRelativeDate(5)" class="date-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">5 Days Ago</button>
+                <button onclick="setRelativeDate(7)" class="date-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">1 Week Ago</button>
+              </div>
+              <div class="pt-2 flex items-center gap-2">
+                <span class="text-xs text-slate-400">Exact date:</span>
+                <input type="date" id="diag-exact-date" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1 text-xs text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500" onchange="handleExactDateChange(this.value)">
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Real-time Verdict Diagnostic Result (Right Column) -->
+          <div class="md:col-span-5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/80 flex flex-col justify-between h-full space-y-6">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+                <span class="text-xs uppercase tracking-wider font-bold text-slate-400">Safety Verdict</span>
+                <span id="diag-risk-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  Safe to Eat
+                </span>
+              </div>
+
+              <!-- Main Status Callout -->
+              <div class="my-5 text-center">
+                <div id="verdict-icon-container" class="w-16 h-16 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 shadow-inner">
+                  <i data-lucide="check-circle-2" class="w-9 h-9"></i>
+                </div>
+                <h3 id="verdict-headline" class="text-xl font-extrabold text-slate-900 dark:text-white">Fresh & Peak Quality</h3>
+                <p id="verdict-subtext" class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs mx-auto">
+                  You have roughly 3 full days remaining in refrigerator storage.
+                </p>
+              </div>
+
+              <!-- Freshness Remaining Bar -->
+              <div class="space-y-1.5 my-4">
+                <div class="flex justify-between text-xs font-medium">
+                  <span class="text-slate-500">Freshness window:</span>
+                  <span id="verdict-timer-text" class="font-bold text-emerald-600 dark:text-emerald-400">75% remaining</span>
+                </div>
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                  <div id="verdict-progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 75%"></div>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 font-mono">
+                  <span id="label-date-started">Logged: Today</span>
+                  <span id="label-date-deadline">Safe until: 3 days</span>
+                </div>
+              </div>
+
+              <!-- Key Spoilage & Pathogen Alerts -->
+              <div id="verdict-warning-box" class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-900 dark:text-amber-200 space-y-1.5">
+                <div class="font-bold flex items-center gap-1.5">
+                  <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 flex-shrink-0"></i>
+                  <span>Important Spoilage Signs</span>
+                </div>
+                <p id="verdict-spoilage-text" class="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+                  Discard immediately if sour aroma, slimy texture, or greyish tint develops. When reheating, ensure 165°F internal temperature.
+                </p>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="space-y-2 pt-2">
+              <button onclick="addDiagnosticToTracker()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shadow-md shadow-emerald-600/20 transition flex items-center justify-center gap-2">
+                <i data-lucide="refrigerator" class="w-4 h-4"></i>
+                <span>Track in My Fridge</span>
+              </button>
+              <button onclick="sendToStickerGeneratorFromDiag()" class="w-full py-2.5 px-4 rounded-xl bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 font-semibold text-sm transition flex items-center justify-center gap-2">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                <span>Generate Container Sticker</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Quick Guidance Row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3.5 shadow-sm">
+          <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
+            <i data-lucide="snowflake" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white">Freezing is a Pause Button</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Food remains safe in 0°F freezer almost indefinitely. Quality/texture degrades after 3-9 months.</p>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3.5 shadow-sm">
+          <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400">
+            <i data-lucide="clock" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white">The 2-Hour Danger Rule</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Perishables sitting between 40°F and 140°F for &gt;2 hours (1 hr if &gt;90°F) must be discarded.</p>
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3.5 shadow-sm">
+          <div class="p-2.5 rounded-xl bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400">
+            <i data-lucide="skull" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-bold text-slate-900 dark:text-white">Beware Cooked Starch</h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Leftover rice and pasta harbor <em>Bacillus cereus</em> spores that heat does not kill. Toss after 3-4 days max.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 2: 'MY FRIDGE & LEFTOVERS' ACTIVE TRACKER                -->
+    <!-- ============================================================== -->
+    <section id="view-tracker" class="space-y-6 hidden">
+      <!-- Tracker Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="refrigerator" class="w-6 h-6 text-emerald-600"></i>
+            My Active Fridge & Leftovers
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            Live shelf-life tracking of your open jars, cooked batches, and thawing meats.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="openQuickTrackModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-emerald-600/20">
+            <i data-lucide="plus" class="w-4 h-4"></i> Add Food Item
+          </button>
+          <button onclick="printAllLabelsFromFridge()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 border border-slate-300 dark:border-slate-700">
+            <i data-lucide="printer" class="w-4 h-4"></i> Print Fridge Sheet
+          </button>
+        </div>
+      </div>
+
+      <!-- Inventory priorities and practical kitchen tools -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 bg-emerald-50 dark:bg-emerald-950/30 p-5 rounded-2xl border border-emerald-200 dark:border-emerald-900">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h3 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="alarm-clock" class="w-4 h-4 text-emerald-600"></i> Use these first</h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Tracked items approaching their estimated storage limit.</p>
+            </div>
+            <span id="priority-count" class="text-xs font-bold text-emerald-800 dark:text-emerald-200"></span>
+          </div>
+          <div id="priority-items" class="mt-3 flex flex-wrap gap-2"></div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <h3 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="thermometer" class="w-4 h-4 text-blue-600"></i> Fridge temperature</h3>
+          <form class="mt-3 flex gap-2" onsubmit="recordTemperature(event)">
+            <label class="sr-only" for="fridge-temperature">Temperature in Fahrenheit</label>
+            <input id="fridge-temperature" type="number" step="0.1" min="-40" max="100" required placeholder="°F" class="min-w-0 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
+            <button class="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white" type="submit">Log</button>
+          </form>
+          <p id="temperature-latest" class="mt-2 text-xs text-slate-500 dark:text-slate-400">Record a reading from an appliance thermometer.</p>
+          <div id="temperature-history" class="mt-2 space-y-1 text-[11px] text-slate-500 dark:text-slate-400"></div>
+          <p class="mt-2 text-[10px] text-slate-400">Food safety guidance recommends keeping refrigerators at 40°F (4°C) or below. A reading is not a continuous temperature monitor.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="shopping-cart" class="w-4 h-4 text-emerald-600"></i> Shopping list <span id="shopping-count" class="text-xs text-slate-400"></span></h3>
+            <button onclick="clearCompletedShoppingItems()" class="text-[11px] font-semibold text-slate-500 hover:text-red-600">Clear checked</button>
+          </div>
+          <form class="mt-3 flex gap-2" onsubmit="addShoppingItem(event)">
+            <label class="sr-only" for="shopping-input">Add shopping-list item</label>
+            <input id="shopping-input" type="text" maxlength="100" required placeholder="Add an item to buy..." class="min-w-0 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
+            <button class="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white" type="submit">Add</button>
+          </form>
+          <ul id="shopping-list" class="mt-3 space-y-2"></ul>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <h3 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="utensils" class="w-4 h-4 text-amber-600"></i> Ideas for your fridge</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Simple prompts based on item names; check ingredients and cook foods safely.</p>
+          <div id="meal-ideas" class="mt-3 space-y-2"></div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-violet-200 bg-violet-50 p-5 dark:border-violet-900 dark:bg-violet-950/30">
+        <div class="flex items-start gap-3">
+          <div class="rounded-xl bg-violet-100 p-2 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300"><i data-lucide="camera" class="h-5 w-5"></i></div>
+          <div>
+            <h3 class="font-extrabold text-slate-900 dark:text-white">Photo your fridge & find recipe ideas</h3>
+            <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Take a photo, then type the ingredients you recognize. The photo stays on this device; ingredient recognition is manual, not AI.</p>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="space-y-3">
+            <label for="fridge-photo" class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-800">
+              <i data-lucide="camera" class="h-4 w-4"></i> Take or choose a photo
+              <input id="fridge-photo" type="file" accept="image/*" capture="environment" class="sr-only" onchange="previewFridgePhoto(event)">
+            </label>
+            <button id="clear-fridge-photo" type="button" onclick="clearFridgePhoto()" class="hidden rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">Remove photo</button>
+            <img id="fridge-photo-preview" alt="Preview of the selected fridge photo" class="hidden max-h-72 w-full rounded-xl border border-violet-200 object-contain dark:border-violet-900">
+            <p id="fridge-photo-status" role="status" class="text-xs text-slate-500 dark:text-slate-400">Your photo is only previewed here and is not uploaded or saved.</p>
+          </div>
+          <div>
+            <label for="photo-ingredients" class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Ingredients you can see</label>
+            <textarea id="photo-ingredients" rows="4" maxlength="500" placeholder="e.g. eggs, spinach, cheese, leftover rice" class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-900"></textarea>
+            <p class="mt-1 text-[10px] text-slate-400">Separate ingredients with commas. Add anything else you have in the pantry too.</p>
+            <button type="button" onclick="suggestPhotoRecipes()" class="mt-3 rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-800">Suggest recipes</button>
+            <div id="photo-recipe-results" aria-live="polite" class="mt-3 space-y-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 class="font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i data-lucide="scan-barcode" class="w-4 h-4 text-violet-600"></i> Barcode lookup</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Look up packaged-food names in Open Food Facts; verify dates and storage instructions on the package.</p>
+          </div>
+          <form class="flex gap-2 sm:min-w-[22rem]" onsubmit="lookupBarcode(event)">
+            <label class="sr-only" for="barcode-input">Product barcode</label>
+            <input id="barcode-input" type="text" inputmode="numeric" pattern="[0-9]{8,14}" maxlength="14" required placeholder="Enter 8–14 digit barcode" class="min-w-0 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">
+            <button id="barcode-lookup-button" class="rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white" type="submit">Look up</button>
+          </form>
+        </div>
+        <p id="barcode-result" role="status" class="mt-2 text-xs text-slate-500 dark:text-slate-400"></p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Inventory backup</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Download or restore your fridge, shopping list, and temperature log on this device.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportData()" class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 dark:border-slate-700 dark:text-slate-200">Export JSON</button>
+          <label class="cursor-pointer rounded-lg bg-slate-800 px-3 py-2 text-xs font-bold text-white dark:bg-slate-700">
+            Import JSON<input type="file" accept="application/json,.json" class="sr-only" onchange="importData(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Filters & Counter Summary -->
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto">
+          <button onclick="filterTracker('all')" id="filter-all" class="tracker-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900">All (<span id="count-all">0</span>)</button>
+          <button onclick="filterTracker('expiring')" id="filter-expiring" class="tracker-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Eat Soon (<span id="count-expiring">0</span>)</button>
+          <button onclick="filterTracker('expired')" id="filter-expired" class="tracker-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Expired (<span id="count-expired">0</span>)</button>
+          <button onclick="filterTracker('freezer')" id="filter-freezer" class="tracker-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">In Freezer (<span id="count-freezer">0</span>)</button>
+        </div>
+        
+        <div class="text-xs text-slate-400 flex items-center gap-2 w-full sm:w-auto justify-end">
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Safe
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 ml-2"></span> Eat Soon
+          <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500 ml-2"></span> Toss
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <label class="sr-only" for="tracker-search">Search tracked foods</label>
+        <input id="tracker-search" type="search" oninput="renderTrackerCards()" placeholder="Search your fridge..." class="w-full sm:flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+        <label class="sr-only" for="tracker-category">Filter by category</label>
+        <select id="tracker-category" onchange="renderTrackerCards()" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+          <option value="all">All categories</option><option value="dairy">Dairy</option><option value="leftovers">Leftovers</option><option value="produce">Produce</option><option value="seafood">Seafood</option><option value="pantry">Pantry</option><option value="custom">Custom</option>
+        </select>
+        <label class="sr-only" for="tracker-sort">Sort tracked foods</label>
+        <select id="tracker-sort" onchange="renderTrackerCards()" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
+          <option value="priority">Sort: use soonest</option><option value="name">Sort: name</option><option value="newest">Sort: recently added</option>
+        </select>
+      </div>
+
+      <!-- Tracker Items Grid -->
+      <div id="tracker-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered via JavaScript -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="tracker-empty-state" class="hidden text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 p-8">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center mb-4">
+          <i data-lucide="sparkles" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Your fridge is all clear!</h3>
+        <p class="text-sm text-slate-500 max-w-sm mx-auto mt-1 mb-5">
+          No food is currently tracked under this filter. Check an item or log your leftovers to prevent food waste.
+        </p>
+        <button onclick="openQuickTrackModal()" class="px-5 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-md">
+          Track New Food Item
+        </button>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 3: PRINTABLE 'SMART LABEL / STICKER' GENERATOR           -->
+    <!-- ============================================================== -->
+    <section id="view-stickers" class="space-y-6 hidden">
+      <div class="max-w-4xl mx-auto space-y-2 text-center">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+          <i data-lucide="tag" class="w-3.5 h-3.5"></i>
+          Physical Container Sticker System
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white">
+          Printable Smart Expiry Labels
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+          The physical unlock: stick these on Mason jars, Pyrex bowls, or deli containers so anyone in the house knows the exact safe eat-by date.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-8 max-w-5xl mx-auto items-start">
+        
+        <!-- Sticker Customizer Controls -->
+        <div class="md:col-span-5 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+          <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-emerald-600"></i>
+            Sticker Configuration
+          </h3>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">Item Name</label>
+            <input type="text" id="sticker-input-name" value="Homemade Beef Chili" class="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none" oninput="updateStickerPreview()">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-500">Prepared / Opened</label>
+              <input type="date" id="sticker-input-opened" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl" onchange="updateStickerDates()">
+            </div>
+            <div class="space-y-1">
+              <label class="text-xs font-bold text-slate-500">Eat-By Deadline</label>
+              <input type="date" id="sticker-input-eatby" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-red-600 dark:text-red-400" onchange="updateStickerPreview()">
+            </div>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">Storage Zone</label>
+            <select id="sticker-input-zone" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl" onchange="updateStickerPreview()">
+              <option value="Fridge (≤40°F)">Fridge (≤40°F)</option>
+              <option value="Freezer (0°F)">Freezer (0°F)</option>
+              <option value="Pantry / Dry">Pantry / Dry</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">Safety Note / Alert</label>
+            <input type="text" id="sticker-input-note" value="Reheat to 165°F once. Don't reheat twice!" class="w-full px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl" oninput="updateStickerPreview()">
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-xs font-bold text-slate-500">Visual Aesthetic Style</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="setStickerStyle('modern')" id="sticker-style-modern" class="sticker-style-btn py-2 text-xs font-bold rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Modern Pill</button>
+              <button onclick="setStickerStyle('retro')" id="sticker-style-retro" class="sticker-style-btn py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">Retro Deli Tag</button>
+            </div>
+          </div>
+
+          <div class="pt-4 flex flex-col gap-2">
+            <button onclick="triggerPrintSticker()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20">
+              <i data-lucide="printer" class="w-4 h-4"></i> Print Single Sticker (or Save PDF)
+            </button>
+            <button onclick="addCurrentStickerToSheet()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700">
+              <i data-lucide="layers" class="w-4 h-4"></i> Add to 6-Up Sheet (<span id="sticker-sheet-count">1</span>)
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Sticker Preview -->
+        <div class="md:col-span-7 flex flex-col items-center justify-center p-6 bg-slate-100 dark:bg-slate-800/40 rounded-3xl border border-dashed border-slate-300 dark:border-slate-700 min-h-[380px]">
+          <span class="text-xs uppercase font-mono text-slate-400 mb-4 tracking-wider">Container Label Live Preview</span>
+
+          <!-- STICKER CARD -->
+          <div id="live-sticker" class="w-80 bg-white text-slate-900 rounded-2xl p-5 shadow-2xl border-2 border-slate-800 relative transition-all duration-300 transform hover:scale-105">
+            <!-- Top Tagline -->
+            <div class="flex items-center justify-between border-b-2 border-slate-800 pb-2.5 mb-3">
+              <div class="flex items-center gap-1.5 font-black text-xs tracking-tight">
+                <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+                <span>STILLGOOD?</span>
+              </div>
+              <span id="preview-sticker-zone" class="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-slate-900 text-white uppercase">Fridge (≤40°F)</span>
+            </div>
+
+            <!-- Item Main Name -->
+            <div class="text-center py-1">
+              <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">CONTAINER CONTENTS</div>
+              <h4 id="preview-sticker-name" class="text-xl font-extrabold tracking-tight text-slate-900 truncate">Homemade Beef Chili</h4>
+            </div>
+
+            <!-- Bold Eat-By Section -->
+            <div class="my-3 py-3 px-3 bg-red-50 border-2 border-red-500 rounded-xl text-center">
+              <div class="text-[10px] font-black tracking-widest text-red-600 uppercase">DO NOT EAT AFTER</div>
+              <div id="preview-sticker-eatby" class="text-2xl font-black font-mono tracking-tight text-red-700">OCT 30, 2026</div>
+              <div class="text-[10px] font-semibold text-red-600">Max 4 Days Leftover Rule</div>
+            </div>
+
+            <!-- Dates & Barcode Meta -->
+            <div class="grid grid-cols-2 gap-2 text-[10px] border-t border-slate-200 pt-2 font-mono">
+              <div>
+                <span class="text-slate-400 block">COOKED / OPEN:</span>
+                <span id="preview-sticker-opened" class="font-bold">OCT 26, 2026</span>
+              </div>
+              <div class="text-right">
+                <span class="text-slate-400 block">GUIDELINE:</span>
+                <span class="font-bold">USDA FSIS #04</span>
+              </div>
+            </div>
+
+            <div id="preview-sticker-note" class="mt-2 text-[9px] bg-slate-100 p-1.5 rounded text-slate-600 italic text-center">
+              "Reheat to 165°F once. Don't reheat twice!"
+            </div>
+
+            <!-- Mock Barcode -->
+            <div class="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
+              <div class="font-mono text-[8px] text-slate-400">BATCH: #SG-7892</div>
+              <div class="flex items-center gap-0.5 h-4">
+                <span class="w-1 h-full bg-slate-800"></span>
+                <span class="w-0.5 h-full bg-slate-800"></span>
+                <span class="w-1.5 h-full bg-slate-800"></span>
+                <span class="w-0.5 h-full bg-slate-800"></span>
+                <span class="w-2 h-full bg-slate-800"></span>
+                <span class="w-1 h-full bg-slate-800"></span>
+                <span class="w-0.5 h-full bg-slate-800"></span>
+                <span class="w-1 h-full bg-slate-800"></span>
+              </div>
+            </div>
+          </div>
+
+          <p class="text-[11px] text-slate-400 mt-4 text-center max-w-xs">
+            Fits Avery 5163, standard thermal 2.25x1.25" rolls, or cut paper with tape.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 4: COMPREHENSIVE FOOD CODEX DATABASE                      -->
+    <!-- ============================================================== -->
+    <section id="view-database" class="space-y-6 hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div>
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <i data-lucide="book-open" class="w-6 h-6 text-emerald-600"></i>
+            Food Codex & Safe Duration Matrix
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">
+            Scientifically backed shelf-life intervals for refrigeration and storage.
+          </p>
+        </div>
+
+        <div class="relative w-full sm:w-72">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+          <input 
+            type="text" 
+            id="codex-search-input" 
+            placeholder="Search items or pathogens..." 
+            class="w-full pl-9 pr-4 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-slate-900 dark:text-white"
+            oninput="filterCodex()"
+          >
+        </div>
+      </div>
+
+      <!-- Categories Pills -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-1" id="codex-category-pills">
+        <button onclick="setCodexCategory('all')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white whitespace-nowrap">All Foods</button>
+        <button onclick="setCodexCategory('dairy')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap">Dairy & Eggs</button>
+        <button onclick="setCodexCategory('meat')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap">Meat & Poultry</button>
+        <button onclick="setCodexCategory('seafood')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap">Seafood</button>
+        <button onclick="setCodexCategory('leftovers')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap">Cooked Leftovers</button>
+        <button onclick="setCodexCategory('pantry')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap">Pantry & Condiments</button>
+        <button onclick="setCodexCategory('produce')" class="codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap">Produce</button>
+      </div>
+
+      <!-- Codex Table -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 font-bold text-slate-500 uppercase tracking-wider text-[11px]">
+                <th class="py-3 px-4">Item & Category</th>
+                <th class="py-3 px-3">Unopened</th>
+                <th class="py-3 px-3">Once Opened (Fridge)</th>
+                <th class="py-3 px-3">Cooked / Prepared</th>
+                <th class="py-3 px-3">Freezer (Quality)</th>
+                <th class="py-3 px-4">Signs of Spoilage & Danger</th>
+                <th class="py-3 px-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="codex-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================== -->
+    <!-- VIEW 5: 'THE LABEL DECODER' (EDUCATIONAL QUICK-GUIDE)          -->
+    <!-- ============================================================== -->
+    <section id="view-decoder" class="space-y-8 hidden">
+      <div class="max-w-3xl mx-auto text-center space-y-3">
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 text-xs font-bold">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-600"></i>
+          Demystifying Grocery Date Stamps
+        </div>
+        <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white">
+          The Grocery Label Decoder
+        </h2>
+        <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300">
+          Did you know? Under US federal law (except for Infant Formula), date stamps on food are <strong>not safety deadlines</strong>—they are voluntary manufacturer quality estimates.
+        </p>
+      </div>
+
+      <!-- Label Comparison Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border-2 border-emerald-500/30 dark:border-emerald-500/20 shadow-sm relative">
+          <span class="text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 uppercase">Quality Only</span>
+          <h3 class="text-lg font-black mt-3 text-slate-900 dark:text-white">"Best If Used By"</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Refers solely to <strong>flavor, crispness, and peak freshness</strong>. The product is NOT spoiled or hazardous once this date passes.
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+            Action: Check smell and look. If it smells and looks fine, eat it.
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border-2 border-red-500/40 dark:border-red-500/30 shadow-sm relative">
+          <span class="text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 uppercase">Safety-Sensitive</span>
+          <h3 class="text-lg font-black mt-3 text-slate-900 dark:text-white">"Use By"</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            The last date recommended for peak quality. Mandatory on <strong>Infant Formula</strong> by federal law. Highly cautious for raw deli poultry and uncured meats.
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-red-600 dark:text-red-400">
+            Action: Never consume infant formula past this date. Cook raw meats by this date or freeze.
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border-2 border-blue-500/30 dark:border-blue-500/20 shadow-sm relative">
+          <span class="text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 uppercase">Supermarket Tool</span>
+          <h3 class="text-lg font-black mt-3 text-slate-900 dark:text-white">"Sell By"</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Tells the store how long to display the product for stock rotation. <strong>Not for consumers!</strong> Milk is typically safe 5-7 days after the "Sell By" date if kept cold.
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
+            Action: Do not discard unopened yogurt or milk just because it reached Sell By.
+          </div>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border-2 border-teal-500/30 dark:border-teal-500/20 shadow-sm relative">
+          <span class="text-[10px] font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 uppercase">Preservation</span>
+          <h3 class="text-lg font-black mt-3 text-slate-900 dark:text-white">"Freeze By"</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+            Guides when to transfer the item to the freezer to maintain texture and avoid microbial multiplication before refrigeration limits expire.
+          </p>
+          <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-teal-600 dark:text-teal-400">
+            Action: Wrap tightly in freezer paper or vacuum bag before this date.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Food Safety Myths Buster -->
+      <div class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6">
+        <h3 class="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+          <i data-lucide="zap" class="w-5 h-5 text-amber-500"></i>
+          Critical Food Safety Myth-Busters
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+          
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1.5">
+            <span class="text-red-500 font-extrabold uppercase">Myth #1: "If it doesn't smell bad, it's safe."</span>
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>False:</strong> Spoilage bacteria (which cause smells, slime, and mold) are not the same as pathogenic bacteria (such as <em>Salmonella, E. coli, Listeria</em>, or <em>Staph aureus</em>). Pathogenic bacteria can multiply to dangerous levels without altering smell, taste, or appearance.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1.5">
+            <span class="text-red-500 font-extrabold uppercase">Myth #2: "Reheating leftovers to boiling kills everything."</span>
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>False:</strong> Heat kills live bacteria, but certain pathogens (like <em>Bacillus cereus</em> in rice or <em>Staphylococcus aureus</em>) produce heat-stable enterotoxins that survive microwave or boiling temperatures. Never eat leftovers past safe day limits.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1.5">
+            <span class="text-red-500 font-extrabold uppercase">Myth #3: "You must let hot food cool completely before refrigerating."</span>
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>False:</strong> Leaving warm soup or casserole on the counter for hours keeps it in the danger zone (40°F–140°F). Divide large portions into shallow containers and place them directly in the fridge within 2 hours.
+            </p>
+          </div>
+
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 space-y-1.5">
+            <span class="text-red-500 font-extrabold uppercase">Myth #4: "Washing raw chicken removes bacteria."</span>
+            <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+              <strong>Dangerous:</strong> Rinsing raw chicken in the sink splashes aerosolized <em>Campylobacter</em> and <em>Salmonella</em> droplets up to 3 feet around your countertops, sponges, and dishware. Only cooking to 165°F destroys poultry bacteria.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- QUICK TRACK MODAL -->
+  <div id="modal-quick-track" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <i data-lucide="plus-circle" class="w-5 h-5 text-emerald-600"></i>
+          Log Food in Fridge Tracker
+        </h3>
+        <button onclick="closeQuickTrackModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-500 uppercase">Food Name</label>
+          <input type="text" id="modal-food-name" placeholder="e.g. Leftover Lasagna" class="w-full mt-1 px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-slate-500 uppercase">Condition</label>
+            <select id="modal-food-condition" class="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <option value="cooked">Cooked Leftover (3-4d)</option>
+              <option value="opened">Once Opened (5-7d)</option>
+              <option value="raw">Raw Meat / Fish (1-2d)</option>
+              <option value="pantry">Pantry / Sauce (14-30d)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-500 uppercase">Zone</label>
+            <select id="modal-food-zone" class="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+              <option value="fridge">Fridge (≤40°F)</option>
+              <option value="freezer">Freezer (0°F)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-500 uppercase">Date Opened / Cooked</label>
+          <input type="date" id="modal-food-date" class="w-full mt-1 px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl">
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-end gap-2">
+        <button onclick="closeQuickTrackModal()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white">Cancel</button>
+        <button onclick="saveModalFoodItem()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-md">Add to Fridge</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HIDDEN PRINT SHEET TEMPLATE -->
+  <div id="printable-sticker-sheet" class="hidden">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <h1 style="font-size: 20px; font-weight: bold; margin: 0;">StillGood? Kitchen Container Stickers</h1>
+      <p style="font-size: 11px; color: #666; margin: 4px 0 0 0;">Safety standards: USDA FSIS & FDA FoodSafety.gov</p>
+    </div>
+    <div id="print-sheet-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+      <!-- Stickers cloned here for printing -->
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-6 text-center text-xs text-slate-400">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="font-extrabold text-emerald-600">StillGood?</span>
+        <span>•</span>
+        <span>Food freshness guidance based on USDA FoodKeeper App data.</span>
+      </div>
+      <div>When in doubt, throw it out. Protect yourself from foodborne pathogens.</div>
+    </div>
+  </footer>
+
+  <!-- ============================================================== -->
+  <!-- JAVASCRIPT APPLICATION LOGIC                                  -->
+  <!-- ============================================================== -->
+  <script>
+    // 1. COMPREHENSIVE FOOD DATABASE
+    const FOOD_DATABASE = [
+      {
+        id: "chicken-cooked",
+        name: "Cooked Chicken Breast / Poultry",
+        category: "leftovers",
+        unopenedDays: 2,
+        openedDays: 3,
+        cookedDays: 4,
+        freezerMonths: 4,
+        spoilageNote: "Sour or sulfur smell, slippery/slimy sheen, grey/greenish discoloration.",
+        pathogenAlert: "Salmonella & Campylobacter risk if left >2h at room temp."
+      },
+      {
+        id: "rice-cooked",
+        name: "Leftover White/Brown Rice",
+        category: "leftovers",
+        unopenedDays: 365,
+        openedDays: 180,
+        cookedDays: 4,
+        freezerMonths: 3,
+        spoilageNote: "Hard/crusty grains, fermented sour aroma, mold patches.",
+        pathogenAlert: "CRITICAL: Bacillus cereus spores survive boiling! Reheat thoroughly and discard after day 4."
+      },
+      {
+        id: "milk-opened",
+        name: "Opened Milk (Dairy)",
+        category: "dairy",
+        unopenedDays: 7, // past sell-by
+        openedDays: 7,
+        cookedDays: 7,
+        freezerMonths: 3,
+        spoilageNote: "Sour/acidic curdled smell, lumpiness, yellowish tint around jug lip.",
+        pathogenAlert: "Store in interior fridge shelf, NOT in the door where temperatures fluctuate."
+      },
+      {
+        id: "ground-beef-raw",
+        name: "Raw Ground Beef / Pork",
+        category: "meat",
+        unopenedDays: 2,
+        openedDays: 1,
+        cookedDays: 4,
+        freezerMonths: 4,
+        spoilageNote: "Slimy feel, pungent chemical/foul odor, excessive brown darkening.",
+        pathogenAlert: "Very high surface area for E. coli. Cook to 160°F internal temp."
+      },
+      {
+        id: "salmon-raw",
+        name: "Raw Salmon / Whitefish Fillet",
+        category: "seafood",
+        unopenedDays: 2,
+        openedDays: 1,
+        cookedDays: 3,
+        freezerMonths: 3,
+        spoilageNote: "Overly fishy/ammonia odor, dull eyes/flesh, mushy texture when pressed.",
+        pathogenAlert: "Must be refrigerated immediately (≤38°F ideal)."
+      },
+      {
+        id: "deli-sliced-turkey",
+        name: "Deli Sliced Cold Cuts (Open Pack)",
+        category: "meat",
+        unopenedDays: 14,
+        openedDays: 5,
+        cookedDays: 5,
+        freezerMonths: 2,
+        spoilageNote: "Iridescent metallic sheen is normal, but slimy liquid or vinegar smell means throw out.",
+        pathogenAlert: "Listeria monocytogenes can continue to grow in the cold refrigerator."
+      },
+      {
+        id: "soup-stew",
+        name: "Homemade Soup, Chili & Stews",
+        category: "leftovers",
+        unopenedDays: 3,
+        openedDays: 3,
+        cookedDays: 4,
+        freezerMonths: 6,
+        spoilageNote: "Bubbling/fermenting, sour top foam, odd yeasty taste.",
+        pathogenAlert: "Cool in wide shallow containers to avoid central bacterial incubator zone."
+      },
+      {
+        id: "eggs-fresh",
+        name: "Raw Shell Eggs",
+        category: "dairy",
+        unopenedDays: 35,
+        openedDays: 21,
+        cookedDays: 7,
+        freezerMonths: 0, // Do not freeze in shell
+        spoilageNote: "Float test: if an egg floats completely in water, air pocket is huge (stale). Rotten eggs smell instantly sulfurous.",
+        pathogenAlert: "Cook until yolk and whites are firm."
+      },
+      {
+        id: "pasta-sauce-jar",
+        name: "Opened Jarred Tomato Pasta Sauce",
+        category: "pantry",
+        unopenedDays: 365,
+        openedDays: 6,
+        cookedDays: 5,
+        freezerMonths: 3,
+        spoilageNote: "Fuzzy white/green mold on rim, sour carbonated fizz.",
+        pathogenAlert: "Even acidic sauces mold quickly once introduced to airborne spores."
+      },
+      {
+        id: "cheddar-hard-cheese",
+        name: "Hard Cheese (Cheddar, Parmesan)",
+        category: "dairy",
+        unopenedDays: 180,
+        openedDays: 28,
+        cookedDays: 7,
+        freezerMonths: 6,
+        spoilageNote: "Surface mold can be safely cut away (cut 1 inch around and below mold); discard if whole block is soft or smells yeasty.",
+        pathogenAlert: "Hard cheeses have low moisture, making bacterial growth slow."
+      },
+      {
+        id: "brie-soft-cheese",
+        name: "Soft Cheese (Brie, Mozzarella, Ricotta)",
+        category: "dairy",
+        unopenedDays: 14,
+        openedDays: 7,
+        cookedDays: 5,
+        freezerMonths: 0,
+        spoilageNote: "Any uninvited mold on soft cheese means DISCARD entire container.",
+        pathogenAlert: "High moisture allows mold mycelium and listeria to permeate through."
+      },
+      {
+        id: "fresh-spinach",
+        name: "Fresh Spinach & Salad Greens",
+        category: "produce",
+        unopenedDays: 7,
+        openedDays: 5,
+        cookedDays: 3,
+        freezerMonths: 6,
+        spoilageNote: "Black slimy liquefying leaves, pungent vegetal decay smell.",
+        pathogenAlert: "Wash thoroughly; discard entire wet soggy mass."
+      },
+      {
+        id: "opened-canned-tuna",
+        name: "Opened Canned Tuna",
+        category: "seafood",
+        unopenedDays: 1000,
+        openedDays: 2,
+        cookedDays: 3,
+        freezerMonths: 2,
+        spoilageNote: "Never store in the open metal can; transfer to glass/plastic. Discard if dry/sour.",
+        pathogenAlert: "Histamine / Scombroid poisoning risk if temperature abused."
+      }
+    ];
+
+    // 2. DEFAULT STATE & TRACKER PERSISTENCE
+    let currentSelectedFood = FOOD_DATABASE[0];
+    let currentFoodState = 'opened'; // 'opened' | 'cooked' | 'raw'
+    let currentStorage = 'fridge';   // 'fridge' | 'freezer' | 'pantry'
+    let currentDaysAgo = 0;          // relative days ago
+
+    // Preload mock items for immediate delight
+    const DEFAULT_TRACKED_ITEMS = [
+      {
+        id: "item-1",
+        name: "Cooked Chicken Breast",
+        category: "leftovers",
+        condition: "cooked",
+        zone: "fridge",
+        dateLogged: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0], // 1 day ago
+        safeDays: 4,
+        note: "Reheat to 165°F"
+      },
+      {
+        id: "item-2",
+        name: "Opened Milk (Dairy)",
+        category: "dairy",
+        condition: "opened",
+        zone: "fridge",
+        dateLogged: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0], // 5 days ago
+        safeDays: 7,
+        note: "Smell check before pour"
+      },
+      {
+        id: "item-3",
+        name: "Leftover White/Brown Rice",
+        category: "leftovers",
+        condition: "cooked",
+        zone: "fridge",
+        dateLogged: new Date(Date.now() - 4 * 86400000).toISOString().split('T')[0], // 4 days ago (Eat today!)
+        safeDays: 4,
+        note: "Bacillus cereus limit! Eat or toss"
+      }
+    ];
+
+    let fridgeItems = [];
+    let shoppingItems = [];
+    let temperatureReadings = [];
+    let stickerSheetList = [];
+
+    // Initialize application
+    window.addEventListener('DOMContentLoaded', () => {
+      loadTrackerFromStorage();
+      loadKitchenToolsFromStorage();
+      initDiagnosticDefaults();
+      const defaultCookedDate = new Date(Date.now() - 60 * 60 * 1000);
+      defaultCookedDate.setMinutes(defaultCookedDate.getMinutes() - defaultCookedDate.getTimezoneOffset());
+      document.getElementById('cooked-food-date').value = defaultCookedDate.toISOString().slice(0, 16);
+      renderCodexTable(FOOD_DATABASE);
+      renderTrackerCards();
+      renderShoppingList();
+      renderTemperatureHistory();
+      renderMealIdeas();
+      updateStickerPreview();
+      lucide.createIcons();
+    });
+
+    // 3. TAB NAVIGATION
+    function switchTab(tabId) {
+      const views = ['diagnostic', 'tracker', 'stickers', 'database', 'decoder'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.toggle('hidden', v !== tabId);
+      });
+
+      // Update Desktop Nav styles
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-emerald-700', 'dark:text-emerald-300', 'bg-white', 'dark:bg-slate-700', 'shadow-sm');
+        btn.classList.add('text-slate-600', 'dark:text-slate-400');
+      });
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
+        activeBtn.classList.add('text-emerald-700', 'dark:text-emerald-300', 'bg-white', 'dark:bg-slate-700', 'shadow-sm');
+      }
+
+      // Re-trigger icon rendering in newly displayed elements
+      lucide.createIcons();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function checkCookedFood(event) {
+      event.preventDefault();
+      const name = document.getElementById('cooked-food-name').value.trim();
+      const dateValue = document.getElementById('cooked-food-date').value;
+      const storage = document.getElementById('cooked-food-storage').value;
+      const reportedOutHours = Number(document.getElementById('cooked-food-out-hours').value);
+      const hotConditions = document.getElementById('cooked-food-hot').checked;
+      const result = document.getElementById('cooked-food-result');
+      const preparedAt = new Date(dateValue);
+      const now = new Date();
+
+      result.classList.remove('hidden');
+      result.className = 'mt-4 rounded-2xl border p-4 text-sm';
+      if (!name || !dateValue || !Number.isFinite(preparedAt.getTime()) ||
+          !Number.isFinite(reportedOutHours) || reportedOutHours < 0) {
+        result.classList.add('border-red-300', 'bg-red-50', 'text-red-900', 'dark:border-red-900', 'dark:bg-red-950/40', 'dark:text-red-200');
+        result.textContent = 'Enter a food name, a valid date and time, and a non-negative unrefrigerated time.';
+        return;
+      }
+      if (preparedAt > now) {
+        result.classList.add('border-red-300', 'bg-red-50', 'text-red-900', 'dark:border-red-900', 'dark:bg-red-950/40', 'dark:text-red-200');
+        result.textContent = 'The purchase or cooking time cannot be in the future.';
+        return;
+      }
+
+      const elapsedHours = (now - preparedAt) / 3600000;
+      const hoursOut = storage === 'room' ? Math.max(reportedOutHours, elapsedHours) : reportedOutHours;
+      const outLimit = hotConditions ? 1 : 2;
+      let title;
+      let advice;
+      let style;
+
+      if (hoursOut > outLimit) {
+        title = 'Discard it.';
+        advice = ` ${name} has been unrefrigerated for about ${hoursOut.toFixed(1)} hour(s), beyond the ${outLimit}-hour limit${hotConditions ? ' for temperatures above 90°F / 32°C' : ''}. Do not taste it to check.`;
+        style = ['border-red-300', 'bg-red-50', 'text-red-900', 'dark:border-red-900', 'dark:bg-red-950/40', 'dark:text-red-200'];
+      } else if (storage === 'freezer') {
+        title = 'Frozen storage selected.';
+        advice = ` If ${name} was frozen promptly and has stayed frozen, these refrigerated-leftover day limits do not apply while it remains frozen. Freezing does not undo unsafe time before freezing; thaw safely in the refrigerator and use promptly.`;
+        style = ['border-blue-300', 'bg-blue-50', 'text-blue-900', 'dark:border-blue-900', 'dark:bg-blue-950/40', 'dark:text-blue-200'];
+      } else if (storage === 'room') {
+        title = 'Refrigerate now or discard.';
+        advice = ` ${name} is still within the general ${outLimit}-hour limit based on the time entered, but it should be chilled immediately and eaten within 3–4 days of purchase/cooking.`;
+        style = ['border-amber-300', 'bg-amber-50', 'text-amber-950', 'dark:border-amber-900', 'dark:bg-amber-950/40', 'dark:text-amber-100'];
+      } else if (elapsedHours > 96) {
+        title = 'Discard it.';
+        advice = ` ${name} has been refrigerated for more than 4 days since purchase/cooking. General guidance for cooked leftovers is 3–4 days; discard it, even if it looks or smells fine.`;
+        style = ['border-red-300', 'bg-red-50', 'text-red-900', 'dark:border-red-900', 'dark:bg-red-950/40', 'dark:text-red-200'];
+      } else if (elapsedHours >= 72) {
+        title = 'Use it today, or discard it.';
+        advice = ` ${name} is around day 3–4 of refrigerated storage. The general window for cooked leftovers is 3–4 days; do not keep it beyond 4 days.`;
+        style = ['border-amber-300', 'bg-amber-50', 'text-amber-950', 'dark:border-amber-900', 'dark:bg-amber-950/40', 'dark:text-amber-100'];
+      } else {
+        const hoursLeft = Math.max(0, 96 - elapsedHours);
+        title = 'Within the general refrigerated-leftover window.';
+        advice = ` About ${Math.floor(hoursLeft / 24)} day(s) remain in the 3–4 day guidance window for ${name}. Keep it at 40°F / 4°C or below.`;
+        style = ['border-emerald-300', 'bg-emerald-50', 'text-emerald-950', 'dark:border-emerald-900', 'dark:bg-emerald-950/40', 'dark:text-emerald-100'];
+      }
+
+      result.classList.add(...style);
+      const heading = document.createElement('p');
+      heading.className = 'font-extrabold';
+      heading.textContent = title;
+      const message = document.createElement('p');
+      message.className = 'mt-1';
+      message.textContent = advice;
+      const caveat = document.createElement('p');
+      caveat.className = 'mt-2 text-xs opacity-80';
+      caveat.textContent = 'This estimate assumes the time and storage details are accurate. Unsafe food can look and smell normal. If you are unsure how long it was out or whether it stayed cold, choose the safer option and discard it.';
+      result.replaceChildren(heading, message, caveat);
+    }
+
+    // 4. DIAGNOSTIC LOGIC
+    function initDiagnosticDefaults() {
+      const todayStr = new Date().toISOString().split('T')[0];
+      document.getElementById('diag-exact-date').value = todayStr;
+      document.getElementById('diag-food-search').value = currentSelectedFood.name;
+      calculateVerdict();
+    }
+
+    function handleDiagnosticSearch(val) {
+      const dropdown = document.getElementById('search-autocomplete-dropdown');
+      if (!val || val.trim().length === 0) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+      const matches = FOOD_DATABASE.filter(f => f.name.toLowerCase().includes(val.toLowerCase()));
+      if (matches.length === 0) {
+        dropdown.innerHTML = `<div class="p-3 text-xs text-slate-400">No matching standard foods found. Custom shelf-life will apply.</div>`;
+      } else {
+        dropdown.innerHTML = matches.map(m => `
+          <div onclick="selectAutocompleteItem('${m.id}')" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer flex items-center justify-between text-xs border-b border-slate-100 dark:border-slate-700 last:border-0">
+            <span class="font-semibold text-slate-800 dark:text-slate-200">${m.name}</span>
+            <span class="text-[10px] text-slate-400 uppercase">${m.category}</span>
+          </div>
+        `).join('');
+      }
+      dropdown.classList.remove('hidden');
+    }
+
+    function showDropdown() {
+      const val = document.getElementById('diag-food-search').value;
+      if (val) handleDiagnosticSearch(val);
+    }
+
+    function selectAutocompleteItem(id) {
+      const item = FOOD_DATABASE.find(f => f.id === id);
+      if (item) {
+        currentSelectedFood = item;
+        document.getElementById('diag-food-search').value = item.name;
+        document.getElementById('search-autocomplete-dropdown').classList.add('hidden');
+        calculateVerdict();
+      }
+    }
+
+    function selectQuickFood(name) {
+      const item = FOOD_DATABASE.find(f => f.name.toLowerCase().includes(name.toLowerCase())) || {
+        id: "custom-" + Date.now(),
+        name: name,
+        category: "leftovers",
+        unopenedDays: 5,
+        openedDays: 4,
+        cookedDays: 4,
+        freezerMonths: 3,
+        spoilageNote: "Check for foul smell, slime, or discoloration.",
+        pathogenAlert: "Follow standard 4-day cooked food refrigerator limit."
+      };
+      currentSelectedFood = item;
+      document.getElementById('diag-food-search').value = item.name;
+      calculateVerdict();
+    }
+
+    function setFoodState(state) {
+      currentFoodState = state;
+      ['opened', 'cooked', 'raw'].forEach(s => {
+        const btn = document.getElementById(`btn-state-${s}`);
+        if (s === state) {
+          btn.className = "state-btn p-3 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex flex-col items-center gap-1.5 transition-all";
+        } else {
+          btn.className = "state-btn p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex flex-col items-center gap-1.5 transition-all";
+        }
+      });
+      calculateVerdict();
+    }
+
+    function setStorageMethod(method) {
+      currentStorage = method;
+      ['fridge', 'freezer', 'pantry'].forEach(m => {
+        const btn = document.getElementById(`btn-store-${m}`);
+        if (m === method) {
+          btn.className = "store-btn p-2.5 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center gap-2";
+        } else {
+          btn.className = "store-btn p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-2";
+        }
+      });
+      calculateVerdict();
+    }
+
+    function setRelativeDate(days) {
+      currentDaysAgo = days;
+      const targetDate = new Date(Date.now() - days * 86400000);
+      document.getElementById('diag-exact-date').value = targetDate.toISOString().split('T')[0];
+      calculateVerdict();
+    }
+
+    function handleExactDateChange(dateVal) {
+      if (!dateVal) return;
+      const selected = new Date(dateVal);
+      const today = new Date();
+      const diffTime = today - selected;
+      currentDaysAgo = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+      calculateVerdict();
+    }
+
+    function calculateVerdict() {
+      // Base shelf-life in days
+      let maxDays = 4; // fallback
+
+      if (currentStorage === 'freezer') {
+        maxDays = (currentSelectedFood.freezerMonths || 3) * 30;
+      } else if (currentStorage === 'pantry') {
+        maxDays = currentSelectedFood.unopenedDays || 7;
+      } else {
+        // Refrigerator
+        if (currentFoodState === 'cooked') {
+          maxDays = currentSelectedFood.cookedDays || 4;
+        } else if (currentFoodState === 'opened') {
+          maxDays = currentSelectedFood.openedDays || 5;
+        } else {
+          // Raw
+          maxDays = currentSelectedFood.unopenedDays || 2;
+        }
+      }
+
+      const daysRemaining = maxDays - currentDaysAgo;
+      const percentRemaining = Math.max(0, Math.min(100, Math.round((daysRemaining / maxDays) * 100)));
+
+      // UI Elements
+      const badge = document.getElementById('diag-risk-badge');
+      const iconContainer = document.getElementById('verdict-icon-container');
+      const headline = document.getElementById('verdict-headline');
+      const subtext = document.getElementById('verdict-subtext');
+      const timerText = document.getElementById('verdict-timer-text');
+      const progressBar = document.getElementById('verdict-progress-bar');
+      const labelDeadline = document.getElementById('label-date-deadline');
+      const warningText = document.getElementById('verdict-spoilage-text');
+
+      labelDeadline.textContent = daysRemaining > 0 
+        ? `Safe for ~${daysRemaining} more day${daysRemaining > 1 ? 's' : ''}` 
+        : `Expired ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago`;
+
+      warningText.innerHTML = `<strong>Signs of spoilage:</strong> ${currentSelectedFood.spoilageNote || 'Foul odor, slimy surface, mold or abnormal discoloration.'}<br><span class="text-amber-900 dark:text-amber-200 mt-1 block"><strong>Safety alert:</strong> ${currentSelectedFood.pathogenAlert || 'Keep cold at ≤40°F.'}</span>`;
+
+      // Branch 1: Safe & Fresh
+      if (daysRemaining >= 2) {
+        badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 flex items-center gap-1";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Safe to Eat`;
+        iconContainer.className = "w-16 h-16 mx-auto rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-3 shadow-inner";
+        iconContainer.innerHTML = `<i data-lucide="check-circle-2" class="w-9 h-9"></i>`;
+        headline.textContent = "Fresh & Safe";
+        subtext.textContent = `You have approximately ${daysRemaining} day${daysRemaining > 1 ? 's' : ''} remaining in proper refrigeration.`;
+        timerText.textContent = `${percentRemaining}% safe window remaining`;
+        timerText.className = "font-bold text-emerald-600 dark:text-emerald-400";
+        progressBar.className = "bg-emerald-500 h-2.5 rounded-full transition-all duration-500";
+        progressBar.style.width = `${percentRemaining}%`;
+      } 
+      // Branch 2: Eat Soon (Approaching Limit)
+      else if (daysRemaining >= 0) {
+        badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 flex items-center gap-1";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Eat Today / Freeze`;
+        iconContainer.className = "w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3 shadow-inner";
+        iconContainer.innerHTML = `<i data-lucide="clock" class="w-9 h-9"></i>`;
+        headline.textContent = daysRemaining === 0 ? "Last Safe Day! Eat Today" : "Eat Soon (1 Day Left)";
+        subtext.textContent = "This item is at the end of its scientifically safe shelf life. Eat right away or freeze now to preserve.";
+        timerText.textContent = `${percentRemaining}% remaining`;
+        timerText.className = "font-bold text-amber-600 dark:text-amber-400";
+        progressBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-500";
+        progressBar.style.width = `${Math.max(12, percentRemaining)}%`;
+      } 
+      // Branch 3: Risky / Discard
+      else {
+        badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300 flex items-center gap-1";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> Discard Item`;
+        iconContainer.className = "w-16 h-16 mx-auto rounded-2xl bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 flex items-center justify-center mb-3 shadow-inner";
+        iconContainer.innerHTML = `<i data-lucide="skull" class="w-9 h-9"></i>`;
+        headline.textContent = "High Risk - Discard";
+        subtext.textContent = `Expired ${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) !== 1 ? 's' : ''} ago. Bacterial growth or toxins may be present even if smell is masked.`;
+        timerText.textContent = `Window expired`;
+        timerText.className = "font-bold text-red-600 dark:text-red-400";
+        progressBar.className = "bg-red-500 h-2.5 rounded-full transition-all duration-500";
+        progressBar.style.width = `100%`;
+      }
+      lucide.createIcons();
+    }
+
+    // 5. TRACKER / LOCAL STORAGE MANAGEMENT
+    function loadTrackerFromStorage() {
+      try {
+        const stored = localStorage.getItem('stillgood_fridge_items');
+        const parsed = stored ? JSON.parse(stored) : DEFAULT_TRACKED_ITEMS;
+        if (!Array.isArray(parsed)) throw new Error('Saved fridge data is not a list.');
+        fridgeItems = parsed;
+      } catch (e) {
+        console.error('Unable to load saved fridge data.', e);
+        alert('Saved fridge data could not be loaded. The sample inventory will be shown for this visit.');
+        fridgeItems = DEFAULT_TRACKED_ITEMS;
+      }
+      updateTrackerCounts();
+    }
+
+    function saveTrackerToStorage() {
+      try {
+        localStorage.setItem('stillgood_fridge_items', JSON.stringify(fridgeItems));
+      } catch (e) {
+        console.error('Unable to save fridge data.', e);
+        alert('Your fridge changes could not be saved in this browser. Export a backup or free browser storage space.');
+      }
+      updateTrackerCounts();
+      renderTrackerCards();
+      renderPriorities();
+      renderMealIdeas();
+    }
+
+    function loadKitchenToolsFromStorage() {
+      try {
+        const savedShopping = JSON.parse(localStorage.getItem('stillgood_shopping_list') || '[]');
+        const savedTemperatures = JSON.parse(localStorage.getItem('stillgood_temperature_log') || '[]');
+        if (!Array.isArray(savedShopping) || !Array.isArray(savedTemperatures)) throw new Error('Saved kitchen-tool data is invalid.');
+        shoppingItems = savedShopping;
+        temperatureReadings = savedTemperatures;
+      } catch (e) {
+        console.error('Unable to load saved kitchen-tool data.', e);
+        alert('Saved shopping-list or temperature data could not be loaded.');
+        shoppingItems = [];
+        temperatureReadings = [];
+      }
+    }
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[char]);
+    }
+
+    function persistKitchenData() {
+      try {
+        localStorage.setItem('stillgood_shopping_list', JSON.stringify(shoppingItems));
+        localStorage.setItem('stillgood_temperature_log', JSON.stringify(temperatureReadings));
+      } catch (e) {
+        console.error('Unable to save shopping or temperature data.', e);
+        alert('Your shopping-list or temperature changes could not be saved in this browser.');
+      }
+    }
+
+    function updateTrackerCounts() {
+      const now = new Date();
+      let expiringCount = 0;
+      let expiredCount = 0;
+      let freezerCount = 0;
+
+      fridgeItems.forEach(item => {
+        if (item.zone === 'freezer') {
+          freezerCount++;
+          return;
+        }
+        const left = getItemDaysLeft(item);
+        if (left < 0) expiredCount++;
+        else if (left <= 1) expiringCount++;
+      });
+
+      document.getElementById('nav-tracker-count').textContent = fridgeItems.length;
+      document.getElementById('mobile-tracker-count').textContent = fridgeItems.length;
+      document.getElementById('count-all').textContent = fridgeItems.length;
+      document.getElementById('count-expiring').textContent = expiringCount;
+      document.getElementById('count-expired').textContent = expiredCount;
+      document.getElementById('count-freezer').textContent = freezerCount;
+      renderPriorities();
+    }
+
+    let activeFilter = 'all';
+    function filterTracker(filter) {
+      activeFilter = filter;
+      document.querySelectorAll('.tracker-filter').forEach(btn => {
+        btn.className = "tracker-filter px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+      });
+      document.getElementById(`filter-${filter}`).className = "tracker-filter px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900";
+      renderTrackerCards();
+    }
+
+    function renderTrackerCards() {
+      const container = document.getElementById('tracker-cards-container');
+      const emptyState = document.getElementById('tracker-empty-state');
+
+      let filtered = fridgeItems.filter(item => {
+        if (activeFilter === 'freezer') return item.zone === 'freezer';
+        const left = getItemDaysLeft(item);
+
+        if (activeFilter === 'expiring') return item.zone !== 'freezer' && (left <= 1 && left >= 0);
+        if (activeFilter === 'expired') return item.zone !== 'freezer' && left < 0;
+        return true;
+      });
+
+      const query = (document.getElementById('tracker-search')?.value || '').trim().toLowerCase();
+      const category = document.getElementById('tracker-category')?.value || 'all';
+      filtered = filtered.filter(item =>
+        (!query || item.name.toLowerCase().includes(query)) &&
+        (category === 'all' || item.category === category)
+      );
+      const sort = document.getElementById('tracker-sort')?.value || 'priority';
+      filtered.sort((a, b) => {
+        if (sort === 'name') return a.name.localeCompare(b.name);
+        if (sort === 'newest') return b.dateLogged.localeCompare(a.dateLogged);
+        const aLeft = a.zone === 'freezer' ? Number.MAX_SAFE_INTEGER : getItemDaysLeft(a);
+        const bLeft = b.zone === 'freezer' ? Number.MAX_SAFE_INTEGER : getItemDaysLeft(b);
+        return aLeft - bLeft;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+
+      container.innerHTML = filtered.map(item => {
+        const daysLeft = getItemDaysLeft(item);
+        const isFreezer = item.zone === 'freezer';
+
+        let badgeStyle = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
+        let statusText = `${daysLeft} days left`;
+        let cardBorder = "border-slate-200 dark:border-slate-800";
+
+        if (isFreezer) {
+          badgeStyle = "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300";
+          statusText = "Safe in Freezer (Months)";
+        } else if (daysLeft < 0) {
+          badgeStyle = "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300";
+          statusText = `Expired ${Math.abs(daysLeft)}d ago`;
+          cardBorder = "border-red-300 dark:border-red-800/80";
+        } else if (daysLeft <= 1) {
+          badgeStyle = "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300";
+          statusText = daysLeft === 0 ? "Eat today!" : "1 day left";
+          cardBorder = "border-amber-300 dark:border-amber-800/80";
+        }
+
+        return `
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border ${cardBorder} shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4">
+            <div>
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${badgeStyle}">
+                  ${statusText}
+                </span>
+                <span class="text-xs text-slate-400 font-mono">${item.zone === 'freezer' ? '❄️ Freezer' : '🥗 Fridge'}</span>
+              </div>
+              <h4 class="text-base font-extrabold text-slate-900 dark:text-white mt-2">${escapeHTML(item.name)}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Condition: <span class="capitalize font-semibold text-slate-700 dark:text-slate-300">${escapeHTML(item.condition)}</span> • Logged: ${escapeHTML(item.dateLogged)}
+              </p>
+              ${item.note ? `<div class="mt-2 text-[11px] bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg text-slate-600 dark:text-slate-300 font-mono italic">Note: ${escapeHTML(item.note)}</div>` : ''}
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+              <button onclick="addItemToShoppingList(decodeURIComponent('${encodeURIComponent(item.name).replace(/'/g, '%27')}'))" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold" title="Add to shopping list">Restock</button>
+              <button onclick="markItemEaten(decodeURIComponent('${encodeURIComponent(item.id)}'))" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1 transition">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> Mark Eaten
+              </button>
+              
+              <div class="flex items-center gap-1">
+                ${!isFreezer ? `
+                  <button onclick="moveItemToFreezer(decodeURIComponent('${encodeURIComponent(item.id)}'))" title="Move to Freezer (+6 mos)" class="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition">
+                    <i data-lucide="snowflake" class="w-4 h-4"></i>
+                  </button>
+                ` : ''}
+                <button onclick="printStickerForItem(decodeURIComponent('${encodeURIComponent(item.id)}'))" title="Print label" class="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                  <i data-lucide="printer" class="w-4 h-4"></i>
+                </button>
+                <button onclick="removeItemFromFridge(decodeURIComponent('${encodeURIComponent(item.id)}'))" title="Remove" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function getItemDaysLeft(item) {
+      const logged = new Date(`${item.dateLogged}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return item.safeDays - Math.floor((today - logged) / 86400000);
+    }
+
+    function renderPriorities() {
+      const container = document.getElementById('priority-items');
+      if (!container) return;
+      const priorities = fridgeItems
+        .filter(item => item.zone !== 'freezer' && getItemDaysLeft(item) <= 2)
+        .sort((a, b) => getItemDaysLeft(a) - getItemDaysLeft(b))
+        .slice(0, 5);
+      document.getElementById('priority-count').textContent = priorities.length ? `${priorities.length} to review` : 'All clear';
+      container.innerHTML = priorities.length
+        ? priorities.map(item => {
+          const daysLeft = getItemDaysLeft(item);
+          const label = daysLeft < 0 ? `${Math.abs(daysLeft)}d past estimate` : daysLeft === 0 ? 'Review today' : `${daysLeft}d left`;
+          return `<button onclick="focusTrackedItem(decodeURIComponent('${encodeURIComponent(item.name).replace(/'/g, '%27')}'))" class="rounded-lg border border-emerald-200 bg-white px-3 py-2 text-left text-xs dark:border-emerald-900 dark:bg-slate-900"><span class="block font-bold text-slate-800 dark:text-white">${escapeHTML(item.name)}</span><span class="text-slate-500">${label}</span></button>`;
+        }).join('')
+        : '<p class="text-xs text-slate-500 dark:text-slate-400">No tracked fridge items need attention right now.</p>';
+    }
+
+    function focusTrackedItem(name) {
+      filterTracker('all');
+      document.getElementById('tracker-search').value = name;
+      renderTrackerCards();
+    }
+
+    function addShoppingItem(event) {
+      event.preventDefault();
+      const input = document.getElementById('shopping-input');
+      const name = input.value.trim();
+      if (!name) return;
+      shoppingItems.unshift({ id: `shop-${Date.now()}`, name: name.slice(0, 100), checked: false });
+      input.value = '';
+      persistKitchenData();
+      renderShoppingList();
+    }
+
+    function addItemToShoppingList(name) {
+      if (!name || shoppingItems.some(item => item.name.toLowerCase() === name.toLowerCase() && !item.checked)) return;
+      shoppingItems.unshift({ id: `shop-${Date.now()}`, name: name.slice(0, 100), checked: false });
+      persistKitchenData();
+      renderShoppingList();
+    }
+
+    function toggleShoppingItem(id) {
+      const item = shoppingItems.find(entry => entry.id === id);
+      if (!item) return;
+      item.checked = !item.checked;
+      persistKitchenData();
+      renderShoppingList();
+    }
+
+    function removeShoppingItem(id) {
+      shoppingItems = shoppingItems.filter(item => item.id !== id);
+      persistKitchenData();
+      renderShoppingList();
+    }
+
+    function clearCompletedShoppingItems() {
+      shoppingItems = shoppingItems.filter(item => !item.checked);
+      persistKitchenData();
+      renderShoppingList();
+    }
+
+    function renderShoppingList() {
+      const list = document.getElementById('shopping-list');
+      if (!list) return;
+      const remaining = shoppingItems.filter(item => !item.checked).length;
+      document.getElementById('shopping-count').textContent = `(${remaining} remaining)`;
+      list.innerHTML = shoppingItems.length
+        ? shoppingItems.map(item => `<li class="flex items-center gap-2 text-sm">
+            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleShoppingItem(decodeURIComponent('${encodeURIComponent(item.id)}'))" aria-label="Mark ${escapeHTML(item.name)} as purchased">
+            <span class="flex-1 ${item.checked ? 'line-through text-slate-400' : 'text-slate-700 dark:text-slate-200'}">${escapeHTML(item.name)}</span>
+            <button onclick="removeShoppingItem(decodeURIComponent('${encodeURIComponent(item.id)}'))" class="px-2 text-slate-400 hover:text-red-500" aria-label="Remove ${escapeHTML(item.name)}">×</button>
+          </li>`).join('')
+        : '<li class="text-xs text-slate-400">Your shopping list is empty. Add an item above or use “Restock” on a tracked food.</li>';
+    }
+
+    function recordTemperature(event) {
+      event.preventDefault();
+      const input = document.getElementById('fridge-temperature');
+      const value = Number(input.value);
+      if (!Number.isFinite(value) || value < -40 || value > 100) {
+        alert('Enter a temperature between -40°F and 100°F.');
+        return;
+      }
+      temperatureReadings.unshift({ value, date: new Date().toISOString() });
+      temperatureReadings = temperatureReadings.slice(0, 10);
+      persistKitchenData();
+      input.value = '';
+      renderTemperatureHistory();
+    }
+
+    function renderTemperatureHistory() {
+      const latest = document.getElementById('temperature-latest');
+      if (!latest) return;
+      if (!temperatureReadings.length) {
+        latest.textContent = 'Record a reading from an appliance thermometer.';
+        document.getElementById('temperature-history').innerHTML = '';
+        return;
+      }
+      const reading = temperatureReadings[0];
+      const alertText = reading.value > 40 ? 'Above 40°F — check the appliance and move food if needed.' : 'At or below 40°F.';
+      latest.innerHTML = `Latest: <strong>${reading.value}°F</strong> · ${new Date(reading.date).toLocaleString()} <span class="${reading.value > 40 ? 'font-bold text-red-600' : 'font-semibold text-emerald-600'}">${alertText}</span>`;
+      document.getElementById('temperature-history').innerHTML = temperatureReadings.slice(1, 4).map(entry =>
+        `<div>${entry.value}°F · ${new Date(entry.date).toLocaleString()}</div>`
+      ).join('');
+    }
+
+    function renderMealIdeas() {
+      const container = document.getElementById('meal-ideas');
+      if (!container) return;
+      const candidates = [
+        { words: ['chicken', 'rice'], title: 'Chicken & rice bowl', text: 'Combine cooked chicken and rice with vegetables or a sauce you have.' },
+        { words: ['spinach', 'egg'], title: 'Spinach and egg scramble', text: 'Cook greens into eggs; cook eggs until set.' },
+        { words: ['pasta', 'sauce'], title: 'Quick pasta night', text: 'Pair pasta with opened sauce and add vegetables or cheese.' },
+        { words: ['cheese', 'spinach'], title: 'Cheesy greens toast', text: 'Cook greens, top with cheese, and serve on toast.' },
+        { words: ['tuna'], title: 'Tuna salad or melt', text: 'Use opened tuna promptly; mix with pantry staples or heat on toast.' },
+        { words: ['milk'], title: 'Pancakes or oatmeal', text: 'Use milk in pancakes or oatmeal if it has been stored and handled safely.' },
+        { words: ['soup', 'chili'], title: 'Leftover soup night', text: 'Reheat leftovers to 165°F and serve with bread or rice.' }
+      ];
+      const names = fridgeItems.filter(item => item.zone !== 'freezer' && getItemDaysLeft(item) >= 0).map(item => item.name.toLowerCase()).join(' ');
+      const matched = candidates.filter(recipe => recipe.words.some(word => names.includes(word))).slice(0, 3);
+      const ideas = matched.length ? matched : [
+        { title: 'Build a grain bowl', text: 'Use a grain, a protein, and vegetables you already have; reheat leftovers safely.' },
+        { title: 'Flexible omelet', text: 'Cook vegetables and add eggs and cheese, if available.' }
+      ];
+      container.innerHTML = ideas.map(recipe => `<div class="rounded-lg bg-amber-50 p-3 dark:bg-amber-950/30"><p class="text-xs font-bold text-slate-800 dark:text-white">${recipe.title}</p><p class="mt-1 text-[11px] text-slate-600 dark:text-slate-300">${recipe.text}</p></div>`).join('');
+    }
+
+    let fridgePhotoUrl = null;
+
+    function previewFridgePhoto(event) {
+      const file = event.target.files && event.target.files[0];
+      const status = document.getElementById('fridge-photo-status');
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        event.target.value = '';
+        status.textContent = 'Choose an image file to preview your fridge photo.';
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        event.target.value = '';
+        status.textContent = 'That image is larger than 10 MB. Choose a smaller photo.';
+        return;
+      }
+      clearFridgePhoto(false);
+      fridgePhotoUrl = URL.createObjectURL(file);
+      const preview = document.getElementById('fridge-photo-preview');
+      preview.src = fridgePhotoUrl;
+      preview.classList.remove('hidden');
+      document.getElementById('clear-fridge-photo').classList.remove('hidden');
+      status.textContent = 'Photo preview ready. It stays in this browser and is not uploaded or saved.';
+    }
+
+    function clearFridgePhoto(resetInput = true) {
+      if (fridgePhotoUrl) {
+        URL.revokeObjectURL(fridgePhotoUrl);
+        fridgePhotoUrl = null;
+      }
+      const preview = document.getElementById('fridge-photo-preview');
+      preview.removeAttribute('src');
+      preview.classList.add('hidden');
+      document.getElementById('clear-fridge-photo').classList.add('hidden');
+      if (resetInput) document.getElementById('fridge-photo').value = '';
+      document.getElementById('fridge-photo-status').textContent = 'Your photo is only previewed here and is not uploaded or saved.';
+    }
+
+    function suggestPhotoRecipes() {
+      const raw = document.getElementById('photo-ingredients').value.trim().toLowerCase();
+      const results = document.getElementById('photo-recipe-results');
+      if (!raw) {
+        results.innerHTML = '<p class="text-xs text-amber-700 dark:text-amber-300">Add a few ingredients you recognize before asking for ideas.</p>';
+        return;
+      }
+      const ingredients = raw.split(',').map(item => item.trim()).filter(Boolean);
+      const recipes = [
+        { title: 'Spinach and cheese omelet', match: ['egg', 'spinach', 'cheese'], steps: 'Cook spinach in a pan, add beaten eggs, and fold in cheese. Cook eggs until set.' },
+        { title: 'Chicken fried rice', match: ['chicken', 'rice', 'egg', 'peas', 'carrot'], steps: 'Stir-fry cooked rice with vegetables and cooked chicken; heat leftovers thoroughly. Add egg and cook until set.' },
+        { title: 'Tomato pasta', match: ['pasta', 'tomato', 'sauce', 'cheese'], steps: 'Cook pasta, warm tomato sauce, and finish with cheese or vegetables.' },
+        { title: 'Loaded baked potato', match: ['potato', 'cheese', 'broccoli', 'bean'], steps: 'Bake a potato until tender and top with cooked vegetables, beans, or cheese.' },
+        { title: 'Tuna melt', match: ['tuna', 'bread', 'cheese'], steps: 'Mix drained tuna with a little dressing, place on bread with cheese, and heat until hot.' },
+        { title: 'Vegetable quesadilla', match: ['tortilla', 'pepper', 'bean', 'cheese', 'spinach'], steps: 'Fill a tortilla with beans, vegetables, and cheese; cook both sides until crisp and hot.' },
+        { title: 'Quick soup', match: ['broth', 'carrot', 'celery', 'bean', 'chicken', 'noodle'], steps: 'Simmer broth with vegetables and a protein until everything is thoroughly hot and cooked.' },
+        { title: 'Yogurt fruit bowl', match: ['yogurt', 'berry', 'banana', 'apple'], steps: 'Top yogurt with fresh fruit, oats, or nuts.' },
+        { title: 'Simple salad bowl', match: ['lettuce', 'spinach', 'tomato', 'cucumber', 'egg'], steps: 'Combine greens and vegetables; add a fully cooked protein and dressing.' }
+      ];
+      const matches = recipes.map(recipe => ({
+        ...recipe,
+        score: recipe.match.filter(term => ingredients.some(ingredient => ingredient.includes(term))).length
+      })).filter(recipe => recipe.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 3);
+
+      results.innerHTML = matches.length
+        ? matches.map(recipe => `<div class="rounded-xl border border-violet-200 bg-white p-3 dark:border-violet-900 dark:bg-slate-900"><p class="text-xs font-extrabold text-slate-900 dark:text-white">${escapeHTML(recipe.title)}</p><p class="mt-1 text-[11px] text-slate-600 dark:text-slate-300">${escapeHTML(recipe.steps)}</p><p class="mt-1 text-[10px] font-semibold text-violet-700 dark:text-violet-300">Matched ${recipe.score} ingredient type(s)</p></div>`).join('')
+        : '<p class="text-xs text-slate-600 dark:text-slate-300">No close match yet. Try adding ingredients like eggs, rice, pasta, cheese, vegetables, or beans—or use the general recipe ideas above.</p>';
+    }
+
+    async function lookupBarcode(event) {
+      event.preventDefault();
+      const input = document.getElementById('barcode-input');
+      const result = document.getElementById('barcode-result');
+      const button = document.getElementById('barcode-lookup-button');
+      const barcode = input.value.trim();
+      if (!/^\d{8,14}$/.test(barcode)) {
+        result.textContent = 'Enter a valid barcode containing 8–14 digits.';
+        return;
+      }
+      button.disabled = true;
+      result.textContent = 'Looking up product…';
+      try {
+        const response = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=product_name,brands`);
+        if (!response.ok) throw new Error(`Product lookup failed (HTTP ${response.status}).`);
+        const data = await response.json();
+        if (data.status !== 1 || !data.product) {
+          result.textContent = 'No product found. You can still add it manually with Quick Log.';
+          return;
+        }
+        const productName = [data.product.product_name, data.product.brands].filter(Boolean).join(' — ').slice(0, 100);
+        if (!productName) {
+          result.textContent = 'Product found, but it has no name in the catalog. Add it manually with Quick Log.';
+          return;
+        }
+        openQuickTrackModal();
+        document.getElementById('modal-food-name').value = productName;
+        result.textContent = `Found: ${productName}. Check the package for its date and storage directions before adding it.`;
+      } catch (error) {
+        console.error('Barcode lookup failed.', error);
+        result.textContent = 'Could not contact the product catalog. Check your connection or add the food manually.';
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function exportData() {
+      try {
+        const backup = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          fridgeItems,
+          shoppingItems,
+          temperatureReadings
+        };
+        const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `stillgood-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Unable to export backup.', error);
+        alert('The backup could not be created.');
+      }
+    }
+
+    async function importData(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = '';
+      if (!file) return;
+      if (file.size > 1024 * 1024) {
+        alert('Backup file is too large. Choose a file smaller than 1 MB.');
+        return;
+      }
+      try {
+        const backup = JSON.parse(await file.text());
+        if (!backup || !Array.isArray(backup.fridgeItems) || !Array.isArray(backup.shoppingItems) || !Array.isArray(backup.temperatureReadings)) {
+          throw new Error('Backup must contain fridgeItems, shoppingItems, and temperatureReadings lists.');
+        }
+        const restoredFridge = backup.fridgeItems.map(item => {
+          if (!item || typeof item.name !== 'string' || !item.name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(item.dateLogged) || !Number.isFinite(Number(item.safeDays))) {
+            throw new Error('A saved food item has invalid data.');
+          }
+          return {
+            id: `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            name: item.name.trim().slice(0, 100),
+            category: typeof item.category === 'string' ? item.category.slice(0, 30) : 'custom',
+            condition: ['opened', 'cooked', 'raw', 'pantry'].includes(item.condition) ? item.condition : 'cooked',
+            zone: item.zone === 'freezer' ? 'freezer' : 'fridge',
+            dateLogged: item.dateLogged,
+            safeDays: Math.max(0, Math.min(3650, Number(item.safeDays))),
+            note: typeof item.note === 'string' ? item.note.slice(0, 200) : ''
+          };
+        });
+        const restoredShopping = backup.shoppingItems.map(item => {
+          if (!item || typeof item.name !== 'string') throw new Error('A shopping-list item has invalid data.');
+          return { id: `shop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, name: item.name.trim().slice(0, 100), checked: Boolean(item.checked) };
+        });
+        const restoredTemperatures = backup.temperatureReadings.map(entry => {
+          if (!entry || !Number.isFinite(Number(entry.value)) || !Number.isFinite(Date.parse(entry.date))) throw new Error('A temperature reading has invalid data.');
+          return { value: Number(entry.value), date: new Date(entry.date).toISOString() };
+        }).slice(0, 10);
+        localStorage.setItem('stillgood_fridge_items', JSON.stringify(restoredFridge));
+        localStorage.setItem('stillgood_shopping_list', JSON.stringify(restoredShopping));
+        localStorage.setItem('stillgood_temperature_log', JSON.stringify(restoredTemperatures));
+        fridgeItems = restoredFridge;
+        shoppingItems = restoredShopping;
+        temperatureReadings = restoredTemperatures;
+        updateTrackerCounts();
+        renderTrackerCards();
+        renderShoppingList();
+        renderTemperatureHistory();
+        renderMealIdeas();
+        alert('Backup restored successfully.');
+      } catch (error) {
+        console.error('Unable to import backup.', error);
+        alert(`Backup could not be restored: ${error.message}`);
+      }
+    }
+
+    function addDiagnosticToTracker() {
+      let safeDays = 4;
+      if (currentStorage === 'freezer') safeDays = 120;
+      else if (currentFoodState === 'cooked') safeDays = currentSelectedFood.cookedDays || 4;
+      else if (currentFoodState === 'opened') safeDays = currentSelectedFood.openedDays || 5;
+      else safeDays = currentSelectedFood.unopenedDays || 2;
+
+      const dateStr = document.getElementById('diag-exact-date').value || new Date().toISOString().split('T')[0];
+
+      const newItem = {
+        id: "item-" + Date.now(),
+        name: currentSelectedFood.name,
+        category: currentSelectedFood.category,
+        condition: currentFoodState,
+        zone: currentStorage === 'freezer' ? 'freezer' : 'fridge',
+        dateLogged: dateStr,
+        safeDays: safeDays,
+        note: currentSelectedFood.spoilageNote ? currentSelectedFood.spoilageNote.split('.')[0] : "Check freshness"
+      };
+
+      fridgeItems.unshift(newItem);
+      saveTrackerToStorage();
+
+      // Confetti burst
+      confetti({
+        particleCount: 40,
+        spread: 60,
+        origin: { y: 0.85 }
+      });
+
+      switchTab('tracker');
+    }
+
+    function markItemEaten(id) {
+      fridgeItems = fridgeItems.filter(i => i.id !== id);
+      saveTrackerToStorage();
+      confetti({
+        particleCount: 50,
+        spread: 70,
+        origin: { y: 0.7 }
+      });
+    }
+
+    function moveItemToFreezer(id) {
+      const item = fridgeItems.find(i => i.id === id);
+      if (item) {
+        item.zone = 'freezer';
+        item.safeDays = 180; // 6 months extension
+        item.dateLogged = new Date().toISOString().split('T')[0];
+        saveTrackerToStorage();
+      }
+    }
+
+    function removeItemFromFridge(id) {
+      fridgeItems = fridgeItems.filter(i => i.id !== id);
+      saveTrackerToStorage();
+    }
+
+    // Modal Add Handler
+    function openQuickTrackModal() {
+      document.getElementById('modal-food-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('modal-quick-track').classList.remove('hidden');
+    }
+
+    function closeQuickTrackModal() {
+      document.getElementById('modal-quick-track').classList.add('hidden');
+    }
+
+    function saveModalFoodItem() {
+      const name = document.getElementById('modal-food-name').value.trim();
+      if (!name) return;
+      const cond = document.getElementById('modal-food-condition').value;
+      const zone = document.getElementById('modal-food-zone').value;
+      const date = document.getElementById('modal-food-date').value || new Date().toISOString().split('T')[0];
+
+      let safeDays = 4;
+      if (zone === 'freezer') safeDays = 150;
+      else if (cond === 'cooked') safeDays = 4;
+      else if (cond === 'opened') safeDays = 7;
+      else if (cond === 'raw') safeDays = 2;
+      else safeDays = 21;
+
+      const newItem = {
+        id: "item-" + Date.now(),
+        name: name,
+        category: "custom",
+        condition: cond,
+        zone: zone,
+        dateLogged: date,
+        safeDays: safeDays,
+        note: "Container tracked"
+      };
+
+      fridgeItems.unshift(newItem);
+      saveTrackerToStorage();
+      closeQuickTrackModal();
+      document.getElementById('modal-food-name').value = '';
+    }
+
+    // 6. SMART STICKER / LABEL GENERATOR
+    function updateStickerDates() {
+      const openedDate = new Date(document.getElementById('sticker-input-opened').value || new Date());
+      // Default to +4 days
+      const eatBy = new Date(openedDate.getTime() + 4 * 86400000);
+      document.getElementById('sticker-input-eatby').value = eatBy.toISOString().split('T')[0];
+      updateStickerPreview();
+    }
+
+    function updateStickerPreview() {
+      const name = document.getElementById('sticker-input-name').value || "Homemade Leftovers";
+      const opened = document.getElementById('sticker-input-opened').value;
+      const eatBy = document.getElementById('sticker-input-eatby').value;
+      const zone = document.getElementById('sticker-input-zone').value;
+      const note = document.getElementById('sticker-input-note').value;
+
+      document.getElementById('preview-sticker-name').textContent = name;
+      document.getElementById('preview-sticker-zone').textContent = zone;
+      document.getElementById('preview-sticker-note').textContent = `"${note}"`;
+
+      if (opened) {
+        const d = new Date(opened + "T00:00:00");
+        document.getElementById('preview-sticker-opened').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+      }
+      if (eatBy) {
+        const d = new Date(eatBy + "T00:00:00");
+        document.getElementById('preview-sticker-eatby').textContent = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+      }
+    }
+
+    function setStickerStyle(style) {
+      const sticker = document.getElementById('live-sticker');
+      document.querySelectorAll('.sticker-style-btn').forEach(b => {
+        b.className = "sticker-style-btn py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300";
+      });
+      document.getElementById(`sticker-style-${style}`).className = "sticker-style-btn py-2 text-xs font-bold rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300";
+
+      if (style === 'retro') {
+        sticker.className = "w-80 bg-amber-50 text-amber-950 rounded-lg p-5 shadow-2xl border-4 border-dashed border-amber-800 relative transition-all duration-300";
+      } else {
+        sticker.className = "w-80 bg-white text-slate-900 rounded-2xl p-5 shadow-2xl border-2 border-slate-800 relative transition-all duration-300";
+      }
+    }
+
+    function sendToStickerGeneratorFromDiag() {
+      document.getElementById('sticker-input-name').value = currentSelectedFood.name;
+      const openedStr = document.getElementById('diag-exact-date').value || new Date().toISOString().split('T')[0];
+      document.getElementById('sticker-input-opened').value = openedStr;
+
+      let safeDays = 4;
+      if (currentStorage === 'freezer') safeDays = 120;
+      else if (currentFoodState === 'cooked') safeDays = currentSelectedFood.cookedDays || 4;
+      else safeDays = currentSelectedFood.openedDays || 5;
+
+      const eatByDate = new Date(new Date(openedStr).getTime() + safeDays * 86400000);
+      document.getElementById('sticker-input-eatby').value = eatByDate.toISOString().split('T')[0];
+      document.getElementById('sticker-input-zone').value = currentStorage === 'freezer' ? "Freezer (0°F)" : "Fridge (≤40°F)";
+      document.getElementById('sticker-input-note').value = currentSelectedFood.spoilageNote ? currentSelectedFood.spoilageNote.slice(0, 45) : "Keep cold";
+
+      updateStickerPreview();
+      switchTab('stickers');
+    }
+
+    function printStickerForItem(id) {
+      const item = fridgeItems.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('sticker-input-name').value = item.name;
+      document.getElementById('sticker-input-opened').value = item.dateLogged;
+      const eatByDate = new Date(new Date(item.dateLogged).getTime() + item.safeDays * 86400000);
+      document.getElementById('sticker-input-eatby').value = eatByDate.toISOString().split('T')[0];
+      document.getElementById('sticker-input-zone').value = item.zone === 'freezer' ? "Freezer (0°F)" : "Fridge (≤40°F)";
+      document.getElementById('sticker-input-note').value = item.note || "Eat promptly";
+
+      updateStickerPreview();
+      switchTab('stickers');
+    }
+
+    function triggerPrintSticker() {
+      const printSheet = document.getElementById('print-sheet-grid');
+      const liveSticker = document.getElementById('live-sticker');
+      printSheet.innerHTML = '';
+      
+      // Duplicate current sticker twice for easy standard label printing
+      const clone1 = liveSticker.cloneNode(true);
+      const clone2 = liveSticker.cloneNode(true);
+      printSheet.appendChild(clone1);
+      printSheet.appendChild(clone2);
+
+      window.print();
+    }
+
+    function addCurrentStickerToSheet() {
+      const liveSticker = document.getElementById('live-sticker');
+      stickerSheetList.push(liveSticker.cloneNode(true));
+      document.getElementById('sticker-sheet-count').textContent = stickerSheetList.length + 1;
+      
+      confetti({
+        particleCount: 20,
+        spread: 40,
+        origin: { y: 0.8 }
+      });
+    }
+
+    function printAllLabelsFromFridge() {
+      const printSheet = document.getElementById('print-sheet-grid');
+      printSheet.innerHTML = '';
+
+      if (fridgeItems.length === 0) {
+        alert("Your fridge tracker is currently empty.");
+        return;
+      }
+
+      fridgeItems.forEach(item => {
+        const eatByDate = new Date(new Date(item.dateLogged).getTime() + item.safeDays * 86400000);
+        const card = document.createElement('div');
+        card.style.cssText = "border: 2px solid #000; padding: 12px; border-radius: 8px; font-family: sans-serif; background: #fff;";
+        card.innerHTML = `
+          <div style="font-size: 10px; font-weight: bold; border-bottom: 1px solid #000; padding-bottom: 4px; display: flex; justify-content: space-between;">
+            <span>STILLGOOD?</span>
+            <span>${item.zone.toUpperCase()}</span>
+          </div>
+          <div style="font-size: 14px; font-weight: bold; margin: 8px 0; text-align: center;">${item.name}</div>
+          <div style="background: #fee2e2; border: 1px solid #ef4444; padding: 4px; text-align: center; font-weight: bold; color: #b91c1c; font-size: 13px;">
+            EAT BY: ${eatByDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+          </div>
+          <div style="font-size: 9px; margin-top: 6px; display: flex; justify-content: space-between;">
+            <span>LOGGED: ${item.dateLogged}</span>
+            <span>CONDITION: ${item.condition.toUpperCase()}</span>
+          </div>
+        `;
+        printSheet.appendChild(card);
+      });
+
+      window.print();
+    }
+
+    // 7. CODEX TABLE RENDERING & FILTERING
+    let currentCodexCat = 'all';
+
+    function setCodexCategory(cat) {
+      currentCodexCat = cat;
+      document.querySelectorAll('.codex-cat-btn').forEach(btn => {
+        btn.className = "codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 hover:bg-slate-200 whitespace-nowrap";
+      });
+      event.target.className = "codex-cat-btn px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white whitespace-nowrap";
+      filterCodex();
+    }
+
+    function filterCodex() {
+      const q = document.getElementById('codex-search-input').value.toLowerCase();
+      const filtered = FOOD_DATABASE.filter(item => {
+        const matchesCat = currentCodexCat === 'all' || item.category === currentCodexCat;
+        const matchesQuery = item.name.toLowerCase().includes(q) || 
+                             (item.pathogenAlert && item.pathogenAlert.toLowerCase().includes(q)) ||
+                             (item.spoilageNote && item.spoilageNote.toLowerCase().includes(q));
+        return matchesCat && matchesQuery;
+      });
+      renderCodexTable(filtered);
+    }
+
+    function renderCodexTable(items) {
+      const tbody = document.getElementById('codex-tbody');
+      tbody.innerHTML = items.map(item => `
+        <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
+          <td class="py-3 px-4">
+            <div class="font-bold text-slate-900 dark:text-white">${item.name}</div>
+            <div class="text-[10px] text-slate-400 capitalize">${item.category}</div>
+          </td>
+          <td class="py-3 px-3 text-slate-600 dark:text-slate-300">${item.unopenedDays ? item.unopenedDays + ' days' : 'N/A'}</td>
+          <td class="py-3 px-3 font-semibold text-emerald-600 dark:text-emerald-400">${item.openedDays} days</td>
+          <td class="py-3 px-3 text-slate-600 dark:text-slate-300">${item.cookedDays ? item.cookedDays + ' days' : '—'}</td>
+          <td class="py-3 px-3 text-slate-600 dark:text-slate-300">${item.freezerMonths ? item.freezerMonths + ' mos' : 'Do not freeze'}</td>
+          <td class="py-3 px-4 max-w-xs">
+            <div class="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">${item.spoilageNote}</div>
+            <div class="text-[10px] text-red-500 font-semibold mt-0.5">${item.pathogenAlert}</div>
+          </td>
+          <td class="py-3 px-3 text-right">
+            <button onclick="selectQuickFood('${item.name}')" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-emerald-50 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-[11px] transition">
+              Check
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
