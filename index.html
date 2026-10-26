@@ -85,6 +85,115 @@
     .animate-pulse-subtle {
       animation: pulse-subtle 3s infinite ease-in-out;
     }
+
+    /* Keep the full feature set, but give every view a quieter, flatter visual system. */
+    body {
+      background-color: #f7f8f6;
+      color: #26332b;
+    }
+    body.bg-slate-50 {
+      background-color: #f7f8f6 !important;
+    }
+    html.dark body {
+      background-color: #111713;
+      color: #e5ebe6;
+    }
+    body > div:first-child {
+      background-color: #edf4ee !important;
+      border-color: #dce8de !important;
+      color: #34543d !important;
+    }
+    main {
+      max-width: 72rem;
+    }
+    header {
+      backdrop-filter: none !important;
+      background-color: #fff !important;
+    }
+    .dark header {
+      background-color: #171e19 !important;
+    }
+    header nav {
+      background: transparent !important;
+    }
+    [class*="rounded-"]:not([class*="rounded-full"]) {
+      border-radius: 0.75rem !important;
+    }
+    [class*="shadow-"] {
+      box-shadow: none !important;
+    }
+    [class*="font-black"],
+    [class*="font-extrabold"] {
+      font-weight: 700 !important;
+    }
+    .bg-clip-text {
+      color: #166534 !important;
+      background-image: none !important;
+      -webkit-text-fill-color: currentColor !important;
+    }
+    .dark .bg-clip-text {
+      color: #86efac !important;
+    }
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+    button {
+      transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease !important;
+    }
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    label[for] a:focus-visible {
+      outline: 2px solid #15803d;
+      outline-offset: 2px;
+    }
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+      border-color: #d7ded8;
+    }
+    .dark input:not([type="checkbox"]):not([type="radio"]),
+    .dark select,
+    .dark textarea {
+      border-color: #3b4940;
+    }
+    #view-diagnostic,
+    #view-tracker,
+    #view-stickers,
+    #view-database,
+    #view-decoder {
+      gap: 1.5rem;
+    }
+    #view-diagnostic > * + *,
+    #view-tracker > * + *,
+    #view-stickers > * + *,
+    #view-database > * + *,
+    #view-decoder > * + * {
+      margin-top: 1.5rem !important;
+    }
+    html.dark input:not([type="checkbox"]):not([type="radio"]),
+    html.dark select,
+    html.dark textarea {
+      border-color: #3b4940;
+    }
+    html.dark body > div:first-child {
+      background-color: #1d2b21 !important;
+      border-color: #304536 !important;
+      color: #cde5d1 !important;
+    }
+    @media (max-width: 767px) {
+      main {
+        padding-top: 1.25rem;
+        padding-bottom: 5.5rem;
+      }
+      .tab-btn-mobile {
+        padding: 0.5rem 0.75rem;
+      }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col font-sans transition-colors duration-200">
